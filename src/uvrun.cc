@@ -24,6 +24,11 @@ namespace UV {
 	Handle<Value> cb_function;
 	static Persistent<String> oncomplete_sym;
 	static void idle_cb(uv_idle_t* handle, int status) {
+		if(cb_function->IsUndefined()){
+			uv_idle_stop(handle);
+			return ;
+		}
+
 		object_ = v8::Persistent<v8::Object>::New(v8::Object::New());
 		if (oncomplete_sym.IsEmpty()) {
 			oncomplete_sym = UV_PSYMBOL("oncomplete");
@@ -51,17 +56,17 @@ namespace UV {
 				cb_function=args[0];
 			}else{
 				ThrowException(Exception::TypeError(String::New("wrong arguments")));
-				return v8::Undefined();
+				cb_function=v8::Undefined();
 			}
 
 			if(len==2&&args[1]->IsFunction()){
 				cb_function=args[1];
 			}else{
 				ThrowException(Exception::TypeError(String::New("wrong arguments")));
-				return v8::Undefined();
+				cb_function=v8::Undefined();
 			}
 		}
-		
+
 		uv_idle_init(uv_default_loop(), &idle_handle);
 		uv_idle_start(&idle_handle, idle_cb);
 
@@ -69,12 +74,18 @@ namespace UV {
 		return v8::Undefined();
 	}
 
+	v8::Handle<v8::Value> UvStop(const v8::Arguments& args){
+		HandleScope scope;
 
+		uv_idle_stop(&idle_handle);
+		return v8::Undefined();
+	}
 
 	int RUN::Initialize(v8::Handle<v8::ObjectTemplate> target) {
 		HandleScope scope;
 		//UV_SET_METHOD(target, "uv_run", UvRun);
 		target->Set(String::New("uv_run"), FunctionTemplate::New(UvRun));
+		target->Set(String::New("uv_stop"), FunctionTemplate::New(UvStop));
 		return 0;
 	}
 
