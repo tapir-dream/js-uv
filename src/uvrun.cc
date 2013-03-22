@@ -76,8 +76,8 @@ namespace UV {
 
 	v8::Handle<v8::Value> UvStop(const v8::Arguments& args){
 		HandleScope scope;
-
-		uv_idle_stop(&idle_handle);
+		if(idle_handle.type==UV_IDLE) 
+			uv_idle_stop(&idle_handle);
 		return v8::Undefined();
 	}
 
