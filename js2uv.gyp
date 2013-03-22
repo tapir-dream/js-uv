@@ -23,8 +23,13 @@
       ],
 
       'sources': [
+        'src/init.cc',
+        'src/init.h',
+        'src/init.js',
+        'src/util.h',
         'src/main.cc',
-        #'deps/http_parser/http_parser.h',
+        'src/uvrun.cc',
+        'src/uvrun.h',
 
         #added to the project by default.
         'common.gypi',
@@ -96,6 +101,24 @@
         }],
       ],
       'msvs_settings': {
+        'VCLinkerTool': {
+          'SubSystem': 1, # /subsystem:console
+        },
+      },
+    },
+
+    {
+      'target_name': 'tests',
+      'type': 'executable',
+      'dependencies': [ 'js2uv' ],
+      'sources': [
+        'test/main.cc',
+        'test/uv_run.js',
+      ],
+      'conditions': [
+
+      ],
+      'msvs-settings': {
         'VCLinkerTool': {
           'SubSystem': 1, # /subsystem:console
         },
