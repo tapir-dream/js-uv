@@ -14,6 +14,7 @@ Persistent<String> process_symbol;
 
 
 
+
 Handle<Object> SetupProcessObject(int argc, char *argv[]) {
 	HandleScope scope;
 
@@ -205,6 +206,12 @@ void RunShell(v8::Handle<v8::Context> context) {
 }
 
 
+void InitAllJs2Uv(Handle<ObjectTemplate> global){
+	UV::RUN::Initialize(global);
+	UV::FS::Initialize(global);
+
+
+}
 
 int Start(int argc, char *argv[]) {
 	run_shell = (argc == 1);
@@ -217,8 +224,8 @@ int Start(int argc, char *argv[]) {
 
 		global->Set(String::New("log"), FunctionTemplate::New(Log));
 
-		int r=UV::RUN::Initialize(global);
-
+		
+		InitAllJs2Uv(global);
 
 
 
@@ -274,7 +281,83 @@ Handle<Value>
 }
 
 
+static Persistent<String> errno_symbol;
+static Persistent<String> syscall_symbol;
+static Persistent<String> errpath_symbol;
+static Persistent<String> code_symbol;
 
+
+//static uv_rwlock_t* locks;
+
+
+static const char* get_uv_errno_string(int errorno) {
+	uv_err_t err;
+	memset(&err, 0, sizeof err);
+	err.code = (uv_err_code)errorno;
+	return uv_err_name(err);
+}
+
+static const char* get_uv_errno_message(int errorno) {
+	uv_err_t err;
+	memset(&err, 0, sizeof err);
+	err.code = (uv_err_code)errorno;
+	return uv_strerror(err);
+}
+
+
+Local<Value> UVException(int errorno,
+						 const char *syscall,
+						 const char *msg,
+						 const char *path) {
+							 if (syscall_symbol.IsEmpty()) {
+								 syscall_symbol = UV_PSYMBOL("syscall");
+								 errno_symbol = UV_PSYMBOL("errno");
+								 errpath_symbol = UV_PSYMBOL("path");
+								 code_symbol = UV_PSYMBOL("code");
+							 }
+
+							 if (!msg || !msg[0])
+								 msg = get_uv_errno_message(errorno);
+
+							 Local<String> estring = String::NewSymbol(get_uv_errno_string(errorno));
+							 Local<String> message = String::NewSymbol(msg);
+							 Local<String> cons1 = String::Concat(estring, String::NewSymbol(", "));
+							 Local<String> cons2 = String::Concat(cons1, message);
+
+							 Local<Value> e;
+
+							 Local<String> path_str;
+
+							 if (path) {
+#ifdef _WIN32
+								 if (strncmp(path, "\\\\?\\UNC\\", 8) == 0) {
+									 path_str = String::Concat(String::New("\\\\"), String::New(path + 8));
+								 } else if (strncmp(path, "\\\\?\\", 4) == 0) {
+									 path_str = String::New(path + 4);
+								 } else {
+									 path_str = String::New(path);
+								 }
+#else
+								 path_str = String::New(path);
+#endif
+
+								 Local<String> cons3 = String::Concat(cons2, String::NewSymbol(" '"));
+								 Local<String> cons4 = String::Concat(cons3, path_str);
+								 Local<String> cons5 = String::Concat(cons4, String::NewSymbol("'"));
+								 e = Exception::Error(cons5);
+							 } else {
+								 e = Exception::Error(cons2);
+							 }
+
+							 Local<Object> obj = e->ToObject();
+
+							 // TODO errno should probably go
+							 obj->Set(errno_symbol, Integer::New(errorno));
+							 obj->Set(code_symbol, estring);
+							 if (path) obj->Set(errpath_symbol, path_str);
+							 if (syscall) obj->Set(syscall_symbol, String::NewSymbol(syscall));
+							 return e;
+}
 
 
 

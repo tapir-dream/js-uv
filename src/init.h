@@ -1,5 +1,6 @@
 #include "util.h"
 #include "uvrun.h"
+#include "fs.h"
 
 v8::Handle<v8::Object> SetupProcessObject(int argc, char *argv[]);
 
@@ -21,3 +22,8 @@ UV_EXTERN v8::Handle<v8::Value>
 	const v8::Handle<v8::String> symbol,
 	int argc,
 	v8::Handle<v8::Value> argv[]);
+
+UV_EXTERN v8::Local<v8::Value> UVException(int errorno,
+										   const char *syscall = NULL,
+										   const char *msg     = NULL,
+										   const char *path    = NULL);

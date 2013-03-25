@@ -7,8 +7,7 @@
 namespace UV {
 	using namespace v8;
 
-#define TYPE_ERROR(msg) \
-	ThrowException(Exception::TypeError(String::New(msg)));
+
 
 
 

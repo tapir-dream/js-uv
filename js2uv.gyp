@@ -23,11 +23,14 @@
       ],
 
       'sources': [
+		'src/fs.cc',
+        'src/fs.h',
         'src/init.cc',
         'src/init.h',
         'src/init.js',
         'src/util.h',
         'src/main.cc',
+        'src/util.h',
         'src/uvrun.cc',
         'src/uvrun.h',
 
@@ -112,8 +115,10 @@
       'type': 'executable',
       'dependencies': [ 'js2uv' ],
       'sources': [
-        'test/main.cc',
+        'test/fs.js',
+		'test/main.cc',
         'test/uv_run.js',
+        
       ],
       'conditions': [
 
